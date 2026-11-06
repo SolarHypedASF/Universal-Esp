@@ -1,6 +1,4 @@
 -- Player ESP: box, name, and distance.
--- Project with WorldToViewportPoint. WorldToScreenPoint adds the topbar inset and shifts every box.
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -13,26 +11,15 @@ local genv = getgenv()
 local previousCleanup = genv.__playerEspCleanup
 genv.__playerEspCleanup = nil
 if type(previousCleanup) == "function" then
-	previousCleanup()
-end
-
--- live-reload injects STATE into the global environment. Read it without a bare global
--- so the editor type checker accepts the script when it is opened on its own.
-local live: any = (genv :: any).STATE
-if type(live) ~= "table" then
-	local compiled = loadstring("return STATE")
-	if compiled then
-		local ok, value = pcall(compiled)
-		if ok and type(value) == "table" then
-			live = value
-		end
-	end
+	pcall(previousCleanup)
 end
 
 local function destroyPack(pack)
-	pack.box:Remove()
-	pack.name:Remove()
-	pack.distance:Remove()
+	pcall(function()
+		pack.box:Remove()
+		pack.name:Remove()
+		pack.distance:Remove()
+	end)
 end
 
 local function destroyDrawings()
@@ -58,9 +45,6 @@ local function cleanup()
 end
 
 genv.__playerEspCleanup = cleanup
-if type(live) == "table" and type(live.onCleanup) == "function" then
-	live.onCleanup(cleanup)
-end
 
 local function ensure(player)
 	local pack = drawings[player]
@@ -211,8 +195,4 @@ local function step()
 	end
 end
 
-if type(live) == "table" and type(live.connect) == "function" then
-	connection = live.connect(RunService.RenderStepped, step)
-else
-	connection = RunService.RenderStepped:Connect(step)
-end
+connection = RunService.RenderStepped:Connect(step)
